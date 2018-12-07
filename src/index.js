@@ -4,16 +4,20 @@ import bodyParser from 'body-parser'
 import {graphqlExpress, graphiqlExpress} from 'graphql-server-express'
 import {makeExecutableSchema} from 'graphql-tools'
 import cors from 'cors'
+import dotenv from 'dotenv'
+
 import {prepare} from "../util/index"
 
 const app = express()
 
-app.use(cors())
+// app.use(cors())
+dotenv.config()
 
 const homePath = '/graphiql'
-const URL = 'http://localhost'
-const PORT = 4000
-const MONGO_URL = 'mongodb://localhost:27017/blog'
+const URL = process.env.URL || 'http://localhost'
+const PORT = process.env.PORT || 4000
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/blog'
+
 
 export const start = async () => {
   try {
@@ -22,6 +26,8 @@ export const start = async () => {
     const Posts = db.collection('posts')
     const Comments = db.collection('comments')
 
+    // Type definitions define the "shape" of your data and specify
+    // which ways the data can be fetched from the GraphQL server.
     const typeDefs = [`
       type Query {
         post(_id: String): Post
@@ -53,7 +59,9 @@ export const start = async () => {
         mutation: Mutation
       }
     `];
-
+    
+    // Resolvers define the technique for fetching the types in the
+    // schema.  We'll retrieve books from the "books" array above.
     const resolvers = {
       Query: {
         post: async (root, {_id}) => {
@@ -93,9 +101,7 @@ export const start = async () => {
       resolvers
     })
 
-
     app.use('/graphql', bodyParser.json(), graphqlExpress({schema}))
-
 
     app.use(homePath, graphiqlExpress({
       endpointURL: '/graphql'
